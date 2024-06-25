@@ -23,6 +23,7 @@ var supported_qualities = map[string][]string{
     "dall-e-2": {"standard"},
     "dall-e-3": {"standard", "hd"},
 }
+var supported_outputs = []string{"list", "json"}
 
 type ImageGenerationResponse struct {
     Created int `json:"created"`
@@ -35,12 +36,24 @@ type ImageGenerationData struct {
     B64_json string `json:"b64_json"`
 }
 
+type ImageGenerationErrorResponse struct {
+    Error ImageGenerationErrorData `json:"error"`
+}
+
+type ImageGenerationErrorData struct {
+    Code string `json:"code"`
+    Message string `json:"message"`
+    Param string `json:"param"`
+    Type string `json:"type"`
+}
+
 func main() {
     // flags
     model := flag.String("model", "dall-e-2", "The model to use for image generation.\n Options: 'dall-e-2', 'dall-e-3'\n")
     size := flag.String("size", "1024x1024", "Size of the image to generate.\n Options for dall-e-2: '256x256', '512x512', '1024x1024'\n Options for dall-e-3: '1024x1024', '1792x1024', '1024x1792'\n")
     style := flag.String("style", "vivid", "Style of the image to generate. This flag is only supported for model 'dall-e-3'.\n Options: 'vivid', 'natural'\n")
     quality := flag.String("quality", "standard", "Quality of the image to generate. This flag is only supported for model 'dall-e-3'.\n Options: 'standard', 'hd'\n")
+    output := flag.String("output", "list", "Output format.\n Options: 'list', 'json'\n")
     // set usage information
     flag.Usage = func() {
         w := flag.CommandLine.Output()
@@ -55,7 +68,7 @@ func main() {
         error_information("Prompt is required.")
     }
     // check Options
-    check_option(*model, *size, *style, *quality)
+    check_option(*model, *size, *style, *quality, output)
     // environment variables
     api_key, ok := os.LookupEnv("IMGGEN_API_KEY")
     if !ok {
@@ -90,14 +103,32 @@ func main() {
     }
 
     // parse response
+    if resp.StatusCode != 200 {
+        var imageGenerationErrorResponse ImageGenerationErrorResponse
+        err = json.Unmarshal(body, &imageGenerationErrorResponse)
+        if err != nil {
+            error_information("Failed to parse error response, body is as follows:\n" + string(body))
+        }
+        error_information(imageGenerationErrorResponse.Error.Message)
+    }
+
     var imageGenerationResponse ImageGenerationResponse
     err = json.Unmarshal(body, &imageGenerationResponse)
     if err != nil {
         error_information("Failed to parse response, body is as follows:\n" + string(body))
     }
 
-    fmt.Println("Image URL:\n " + imageGenerationResponse.Data[0].Url)
-    fmt.Println("\nRevised Prompt:\n " + imageGenerationResponse.Data[0].Revised_prompt)
+    // output 
+    switch *output {
+    case "list":
+        fmt.Println("Image URL:\n " + imageGenerationResponse.Data[0].Url)
+        fmt.Println("\nRevised Prompt:\n " + imageGenerationResponse.Data[0].Revised_prompt)
+    case "json":
+        fmt.Println(string(body))
+    default:
+        fmt.Println("Image URL:\n " + imageGenerationResponse.Data[0].Url)
+        fmt.Println("\nRevised Prompt:\n " + imageGenerationResponse.Data[0].Revised_prompt)
+    }
 }
 
 func build_request_body(model, prompt, size, style, quality string) *bytes.Buffer {
@@ -115,7 +146,7 @@ func build_request_body(model, prompt, size, style, quality string) *bytes.Buffe
 /**
  * Check if the options are supported.
  */
-func check_option(model, size, style, quality string) {
+func check_option(model string, size string, style string, quality string, output *string) {
     if !contains(supported_models, model) {
         error_information(fmt.Sprintf("Model '%s' is not supported.", model))
     }
@@ -127,6 +158,9 @@ func check_option(model, size, style, quality string) {
     }
     if !contains(supported_qualities[model], quality) {
         error_information(fmt.Sprintf("Quality '%s' is not supported for model '%s'.", quality, model))
+    }
+    if !contains(supported_outputs, *output) {
+        fmt.Printf("Output '%s' is not supported. Default to 'list'.\n", *output)
     }
 }
 
