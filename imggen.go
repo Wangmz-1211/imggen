@@ -109,6 +109,10 @@ func main() {
         if err != nil {
             error_information("Failed to parse error response, body is as follows:\n" + string(body))
         }
+        if *output == "json" {
+            fmt.Println(string(body))
+            os.Exit(1)
+        }
         error_information(imageGenerationErrorResponse.Error.Message)
     }
 
