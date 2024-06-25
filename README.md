@@ -7,20 +7,20 @@ imggen [options] [prompt]
 ```
 
 ### Options
-  - `model`
+- `model`
 
     The model to use for image generation. (default `dall-e-2`)
     - `dall-e-2`
     - `dall-e-3`
 
-  - `quality`
+- `quality`
 
     Quality of the image to generate. This flag is only supported for model `dall-e-3`. (default `standard`)
     - `standard`
     - `hd`
 
-  - `size`
-    
+- `size`
+
     Size of the image to generate. (default `1024x1024`)
     Options for `dall-e-2`:
     - `256x256`
@@ -31,11 +31,18 @@ imggen [options] [prompt]
     - `1792x1024`
     - `1024x1792`    	 
 
-  - `style`
-    
+- `style`
+
     Style of the image to generate. This flag is only supported for model `dall-e-3`. (default `vivid`)
     - `vivid`
     - `natural`
+
+- `output`
+    Output format. (default `list`)
+
+    - `list`
+    - `json`
+
 
 ### Environment Variables
 
