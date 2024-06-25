@@ -80,7 +80,7 @@ func main() {
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
-        error_information("Failed to send a request.")
+        error_information("Failed to send a request. Maybe the IMGGEN_API_ENDPOINT is invalid.")
     }
     defer resp.Body.Close()
 
